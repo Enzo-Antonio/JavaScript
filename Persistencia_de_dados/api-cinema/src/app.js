@@ -73,7 +73,7 @@ app.get('/filmes/:id', async (req, res) => {
     }
 });
 
-// Exemplo de POST (vazio por enquanto)
+// Criar filme
 app.post('/filmes', async (req, res) => {
     try {
         const {titulo, genero, duracao, classificacao, data_lancamento} = req.body
@@ -117,6 +117,7 @@ app.post('/filmes', async (req, res) => {
     }
 });
 
+//Alterar informações dos filmes
 app.put('/filmes/:id', async (req, res) => {
     try {
         const {id} = req.params
@@ -178,6 +179,7 @@ app.put('/filmes/:id', async (req, res) => {
     }
 })
 
+//Excluir um filme
 app.delete('/filmes/:id', async (req, res) => {
     try {
         const {id} = req.params
@@ -210,6 +212,145 @@ app.delete('/filmes/:id', async (req, res) => {
             mensagem: 'Erro ao excluir filme.',
             erro: erro.message
         })
+    }
+});
+
+// CRUD DAS SALAS
+// Listar todas as salas
+app.get('/salas', async (req, res) => {
+    try {
+        const salas = await queryAsync('SELECT * FROM sala');
+        res.json({
+            sucesso: true,
+            dados: salas,
+            total: salas.length
+        });
+    } catch (erro) {
+        console.error('Erro ao listar as salas: ', erro);
+        res.status(500).json({
+            sucesso: false,
+            mensagem: 'Erro ao listar as salas.',
+            erro: erro.message
+        });
+    }
+});
+
+// Listar as salas por ID
+app.get('/salas/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        if (!id || isNaN(id)) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'ID da sala inválido.'
+            });
+        }
+
+        const sala = await queryAsync('SELECT * FROM sala WHERE id = ?', [id]);
+        
+        if (sala.length === 0) {
+            return res.status(404).json({
+                sucesso: false,
+                mensagem: 'Sala não encontrada.'
+            });
+        }
+
+        res.json({
+            sucesso: true,
+            dados: sala[0]
+        });
+    
+    } catch (erro) {
+        console.error('Erro ao encontrar a sala: ', erro);
+        res.status(500).json({
+            sucesso: false,
+            mensagem: 'Erro ao encontrar a sala.',
+            erro: erro.message
+        });
+    }
+});
+
+// Criar sala (POST) - Ajustado para o seu SQL
+app.post('/salas', async (req, res) => {
+    try {
+        const { nome, capacidade } = req.body;
+
+        if (!nome || !capacidade) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'O nome da sala e a capacidade são obrigatórios.'
+            });
+        }
+        const novaSala = {
+            nome: nome.trim(),
+            capacidade: capacidade
+        };
+        const resultado = await queryAsync('INSERT INTO sala SET ?', [novaSala]);
+
+        res.status(201).json({
+            sucesso: true,
+            mensagem: 'Sala registrada com sucesso!',
+            id: resultado.insertId
+        });
+    } catch (erro) {
+        res.status(500).json({ sucesso: false, erro: erro.message });
+    }
+});
+
+// Alterar informações
+app.put('/salas/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nome, capacidade } = req.body;
+
+        const salaAtualizada = {};
+        if (nome !== undefined) salaAtualizada.nome = nome.trim();
+        if (capacidade !== undefined) salaAtualizada.capacidade = capacidade;
+
+        if (Object.keys(salaAtualizada).length === 0) {
+            return res.status(400).json({ sucesso: false, mensagem: 'Nada para atualizar.' });
+        }
+        await queryAsync('UPDATE sala SET ? WHERE id = ?', [salaAtualizada, id]);
+        
+        res.json({ sucesso: true, mensagem: 'Sala atualizada!' });
+    } catch (erro) {
+        res.status(500).json({ sucesso: false, erro: erro.message });
+    }
+});
+
+// Excluir uma sala
+app.delete('/salas/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id || isNaN(id)) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'ID sala inválido.'
+            });
+        }
+
+        const salaExiste = await queryAsync('SELECT * FROM sala WHERE id = ?', [id]);
+        if (salaExiste.length === 0) {
+            return res.status(404).json({
+                sucesso: false,
+                mensagem: 'Sala não encontrada.'
+            });
+        }
+
+        await queryAsync('DELETE FROM sala WHERE id = ?', [id]);
+        res.json({
+            sucesso: true,
+            mensagem: 'Sala excluída com sucesso!'
+        });
+
+    } catch (erro) {
+        console.error('Erro ao excluir sala.', erro);
+        res.status(500).json({
+            sucesso: false,
+            mensagem: 'Erro ao excluir sala.',
+            erro: erro.message
+        });
     }
 });
 
