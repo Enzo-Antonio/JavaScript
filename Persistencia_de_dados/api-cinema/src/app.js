@@ -117,7 +117,7 @@ app.post('/filmes', async (req, res) => {
     }
 });
 
-//Alterar informações dos filmes
+// Alterar informações dos filmes
 app.put('/filmes/:id', async (req, res) => {
     try {
         const {id} = req.params
@@ -179,7 +179,7 @@ app.put('/filmes/:id', async (req, res) => {
     }
 })
 
-//Excluir um filme
+// Excluir um filme
 app.delete('/filmes/:id', async (req, res) => {
     try {
         const {id} = req.params
@@ -271,7 +271,7 @@ app.get('/salas/:id', async (req, res) => {
     }
 });
 
-// Criar sala (POST) - Ajustado para o seu SQL
+// Criar sala 
 app.post('/salas', async (req, res) => {
     try {
         const { nome, capacidade } = req.body;
@@ -351,6 +351,89 @@ app.delete('/salas/:id', async (req, res) => {
             mensagem: 'Erro ao excluir sala.',
             erro: erro.message
         });
+    }
+});
+
+// CRUD das Sessões
+// Listas todas as sessões
+app.get('/sessoes', async (req, res) => {
+    try {
+        const salas = await queryAsync('SELECT * FROM sessao');
+        res.json({
+            sucesso: true,
+            dados: sessoes,
+            total: sessoes.length
+        });
+    } catch (erro) {
+        console.error('Erro ao listar as sessoes: ', erro);
+        res.status(500).json({
+            sucesso: false,
+            mensagem: 'Erro ao listar as sessoes.',
+            erro: erro.message
+        });
+    }
+});
+
+// Listar as sessoe por ID
+app.get('/sessoes/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        if (!id || isNaN(id)) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'ID da sessão inválido.'
+            });
+        }
+
+        const sala = await queryAsync('SELECT * FROM sessao WHERE id = ?', [id]);
+        
+        if (sessao.length === 0) {
+            return res.status(404).json({
+                sucesso: false,
+                mensagem: 'Sessão não encontrada.'
+            });
+        }
+
+        res.json({
+            sucesso: true,
+            dados: sessao[0]
+        });
+    
+    } catch (erro) {
+        console.error('Erro ao encontrar a sessão: ', erro);
+        res.status(500).json({
+            sucesso: false,
+            mensagem: 'Erro ao encontrar a sessão.',
+            erro: erro.message
+        });
+    }
+});
+
+// Criar sessão
+app.post('/sessoes', async (req, res) => {
+    try {
+        const { id_filme, id_sala, data_hora, preco } = req.body;
+
+        if (!id_filme || !id_sala || !data_hora || !preco) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'O número da sessão, horário e disponibilidade são obrigatórios.'
+            });
+        }
+        const novaSala = {
+            nome: nome.trim(),
+            capacidade: capacidade
+        };
+        const resultado = await queryAsync('INSERT INTO sala SET ?', [novaSala]);
+
+        res.status(201).json({
+            sucesso: true,
+            mensagem: 'Sala registrada com sucesso!',
+            id: resultado.insertId
+        });
+    } catch (erro) {
+        res.status(500).json({ sucesso: false, erro: erro.message });
     }
 });
 
