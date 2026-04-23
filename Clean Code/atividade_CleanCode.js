@@ -11,7 +11,7 @@ const queryAsync = (sql, values = []) => {
             else resolve(results);
         });
     });
-}
+};
 
 function validarID() {
     if (!id || isNaN(id)) {
@@ -19,19 +19,34 @@ function validarID() {
                 sucesso: false,
                 mensagem: 'ID inválido.'
             });
-        }
-}
+        };
+};
 
 function validarErro500() {
-    console.error('Erro ao listar usuários: ', erro);
+    console.error(erro);
         res.status(500).json({
             sucesso: false,
-            mensagem: 'Erro ao listar usuários.',
+            mensagem: erro,
             erro: erro.message
         });
 }
 
 //Exercício 1 - Usuários
+
+function mensagem(res, tipo){
+    res.status(404).json({
+        sucesso: false,
+        mensagem: `${tipo} não encontrado(a).`
+    });
+};
+
+function validarExistencia(resultado, res, tipo){
+    if (resultado.length === 0) {
+        mensagem(res, tipo)
+        return false
+        }
+    return true
+    };
 
 app.get('/usuarios', async (req, res) => {
     try {
@@ -43,17 +58,23 @@ app.get('/usuarios', async (req, res) => {
         });
     }
     catch (erro) {
-        validarErro500()
+        console.error('Erro ao listar usuários: ', erro);
+        res.status(500).json({
+            sucesso: false,
+            mensagem: 'Erro ao listar usuários.',
+            erro: erro.message
+        });
     }
 });
 
 app.get('/usuarios/:id', async (req, res) => {
     try {
         const { id } = req.params;
-
-        validarID(ID);
-
         const usuarios = await queryAsync("SELECT * FROM usuario WHERE id = ?", [id])
+
+        if(!validarExistencia(usuarios, res, 'Usuário')){
+            return
+        }
 
         if (usuarios.length == 0) {
             return res.status(404).json({
@@ -77,21 +98,30 @@ app.get('/usuarios/:id', async (req, res) => {
 
 //Exercício 2 - Pedidos
 
+function validarDadoPedido(cliente, valor){
+    if(!cliente || valor === undefined){
+        return 'Cliente e valor são obrigatórios.'
+    }
+
+    if(typeof valor !== 'number' || valor <= 0){
+        return 'Valor inválido.'
+    }
+
+    return null
+};
+
 app.post('/pedidos', async (req, res) => {
     try {
-        const { cliente, valor } = req.body
-        if (!cliente || !valor) {
+
+        const erro = validarDadoPedido(req.body);
+        
+        if(erro){
             return res.status(400).json({
                 sucesso: false,
-                mensagem: 'Cliente e valor são obrigatórios!'
-            });
+                mensagem: erro
+            })
         }
-        if (typeof valor !== 'number' || valor <= 0) {
-            return res.status(400).json({
-                sucesso: false,
-                mensagem: 'Valor deve ser um número positivo!'
-            });
-        }
+
         const novoPedido = {
             cliente: cliente.trim(),
             valor,
@@ -117,6 +147,18 @@ app.post('/pedidos', async (req, res) => {
 
 //Exercício 3 - Salas
 
+function validarDadosSala(dados, res){
+    if(Object.keys(dados).length === 0){
+        res.status(400).json({
+            sucesso: false,
+            mensagem: 'Nenhum dado enviado.'
+        })
+        return false
+    } else {
+        return true
+    }
+};
+
 app.put('/salas/:id', async (req, res) => {
     try {
         const {id} = req.params
@@ -124,27 +166,25 @@ app.put('/salas/:id', async (req, res) => {
 
         validarID(ID);
 
-        const salaExiste = await queryAsync("SELECT * FROM sala WHERE id = ?", [id])
-        if (salaExiste.length === 0) {
-            return res.status(400).json({
-                sucesso: false,
-                mensagem: 'Sala não encontrada.'
-            });
-        }
-
-        const salaAtualizada = {}
-        if(dados !== undefined) salaAtualizada.dados
+        const sala = await queryAsync("SELECT * FROM sala WHERE id = ?", [id])
+        if (!validarExistencia(sala, res, 'Sala')) {
+            return
+        };
         
+        const salaAtualizada = {}
+        if(!validarDadosSala(dados, res) !== true) {
+            salaAtualizada.dados
+        } else {
+            return 'Dados são obrigatórios.'
+        }
         
         await queryAsync("UPDATE sala SET ? WHERE id = ?", [dados, id])
-        res.json({
+        res.status(201).json({
             sucesso: true,
             mensagem: 'Informações alteradas com sucesso.'
         });
 
     } catch (erro) {
-        console.error('Erro ao alterar informações da sala.')
-
         res.status(500).json({
             sucesso: false,
             mensagem: 'Erro ao alterar informações da sala.',
