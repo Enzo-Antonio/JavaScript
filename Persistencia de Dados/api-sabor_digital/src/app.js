@@ -150,7 +150,7 @@ app.put('/produto/:id', async (req, res) => {
         }
         if (disponivel !== undefined) produtoAtualizado.disponivel = disponivel
         if (Object.keys(produtoAtualizado).length == 0) {
-            return res.status(400).json({
+            return res.status(400).json({   
                 sucesso: false,
                 mensagem: 'Nenhum campo alterado.'
             });
