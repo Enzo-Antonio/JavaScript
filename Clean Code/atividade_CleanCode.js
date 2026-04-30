@@ -22,15 +22,6 @@ function validarID() {
         };
 };
 
-function validarErro500() {
-    console.error(erro);
-        res.status(500).json({
-            sucesso: false,
-            mensagem: erro,
-            erro: erro.message
-        });
-}
-
 //Exercício 1 - Usuários
 
 function mensagem(res, tipo){
@@ -90,7 +81,8 @@ app.get('/usuarios/:id', async (req, res) => {
     } catch (erro) {
         console.error('Erro ao procurar usuário: ', erro);
         res.status(500).json({
-            sucesso: false, mensagem: 'Erro ao encontrar usuário.',
+            sucesso: false,
+            mensagem: 'Erro ao encontrar usuário.',
             erro: erro.message
         });
     }
