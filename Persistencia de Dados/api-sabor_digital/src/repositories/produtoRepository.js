@@ -16,9 +16,24 @@ class ProdutoRepository {
         return resultadoCadastroDeProduto.insertId
     }
 
-    async atualizarProduto(id, dadosDoProdutoproduto) {
-        const produtoAtualizado = await pool.query("UPDATE INTO produto SET ? WHERE id = ?", [dadosDoProduto, id])
-        return produtoAtualizado
+    async atualizarProduto(id, dadosDoProduto) {
+        const camposProduto = []
+        const dadoProduto = []
+
+        for(const [key, value] of Object.entries(dadosDoProduto)) {
+            camposProduto.push(`${key} = ?`)
+            dadoProduto.push(value)
+        }
+
+        if(camposProduto.length === 0) return null
+
+        dadoProduto.push(id)
+
+        const query = 'UPDATE produto SET ${camposProduto.join(",")} WHERE id = ?'
+
+        const resultado = await pool.query(query, dadoProduto)
+
+        return resultado.affectedRows
     }
 
     async excluirProduto(id) {
